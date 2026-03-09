@@ -1,0 +1,5 @@
+# Librerias
+
+psycopg2-binary
+python-dotenv
+rich
