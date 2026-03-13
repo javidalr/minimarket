@@ -47,6 +47,33 @@ def menu_productos():
         elif opcion == "0":
             break
 
+def menu_inventario():
+    while True:
+        console.print("\n=== INVENTARIO ===")
+        console.print("1. Consultar stock")
+        console.print("2. Agregar stock")
+        console.print("3. Eliminar stock")
+        console.print("4. Alertas de caducidad")
+        console.print("0. Volver")
+        opcion = input("\nElige una opción: ")
+
+        if opcion == "1":
+            termino = input("Nombre o código de barra: ")
+            inventario.consultar_stock(termino)
+        elif opcion == "2":
+            producto_id = int(input("ID del producto: "))
+            cantidad = float(input("Cantidad: "))
+            fecha = input("Fecha caducidad (YYYY-MM-DD) o Enter para omitir: ") or None
+            inventario.agregar_stock(producto_id, cantidad, fecha)
+        elif opcion == "3":
+            producto_id = int(input("ID del producto: "))
+            cantidad = float(input("Cantidad a eliminar: "))
+            inventario.eliminar_stock(producto_id, cantidad)
+        elif opcion == "4":
+            inventario.alertas_caducidad()
+        elif opcion == "0":
+            break
+
 def menu_principal():
     while True:
         console.print("\n=== MINIMARKET ===")
@@ -62,7 +89,7 @@ def menu_principal():
         if opcion == "1":
             menu_productos()
         elif opcion == "2":
-            pass  # menu_inventario()
+            menu_inventario()
         elif opcion == "3":
             pass  # menu_ventas()
         elif opcion == "4":
