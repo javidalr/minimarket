@@ -74,6 +74,52 @@ def menu_inventario():
         elif opcion == "0":
             break
 
+def menu_ventas():
+    while True:
+        console.print("\n=== VENTAS ===")
+        console.print("1. Nueva venta")
+        console.print("2. Agregar producto a venta")
+        console.print("3. Eliminar producto de venta")
+        console.print("4. Modificar cantidad")
+        console.print("5. Registrar pago")
+        console.print("6. Completar venta")
+        console.print("7. Cancelar venta")
+        console.print("0. Volver")
+        opcion = input("\nElige una opción: ")
+
+        if opcion == "1":
+            cliente_id = input("ID del cliente (Enter para omitir): ")
+            cliente_id = int(cliente_id) if cliente_id else None
+            venta.crear_venta(cliente_id)
+        elif opcion == "2":
+            venta_id = int(input("ID de la venta: "))
+            producto_id = int(input("ID del producto: "))
+            cantidad = float(input("Cantidad: "))
+            venta.agregar_producto(venta_id, producto_id, cantidad)
+        elif opcion == "3":
+            venta_id = int(input("ID de la venta: "))
+            producto_id = int(input("ID del producto: "))
+            venta.eliminar_producto(venta_id, producto_id)
+        elif opcion == "4":
+            venta_id = int(input("ID de la venta: "))
+            producto_id = int(input("ID del producto: "))
+            cantidad = float(input("Nueva cantidad: "))
+            venta.modificar_cantidad(venta_id, producto_id, cantidad)
+        elif opcion == "5":
+            venta_id = int(input("ID de la venta: "))
+            console.print("Métodos: efectivo / tarjeta / credito")
+            metodo = input("Método de pago: ")
+            monto = float(input("Monto recibido: "))
+            venta.registrar_pago(venta_id, metodo, monto)
+        elif opcion == "6":
+            venta_id = int(input("ID de la venta: "))
+            venta.completar_venta(venta_id)
+        elif opcion == "7":
+            venta_id = int(input("ID de la venta: "))
+            venta.cancelar_venta(venta_id)
+        elif opcion == "0":
+            break
+
 def menu_principal():
     while True:
         console.print("\n=== MINIMARKET ===")
@@ -91,7 +137,7 @@ def menu_principal():
         elif opcion == "2":
             menu_inventario()
         elif opcion == "3":
-            pass  # menu_ventas()
+            menu_ventas()
         elif opcion == "4":
             pass  # menu_clientes()
         elif opcion == "5":
