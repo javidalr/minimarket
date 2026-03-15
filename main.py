@@ -23,6 +23,7 @@ def menu_productos():
         console.print("2. Crear producto")
         console.print("3. Actualizar precio")
         console.print("4. Activar/Desactivar producto")
+        console.print("5. Eliminar producto")
         console.print("0. Volver")
         opcion = input("\nElige una opción: ")
 
@@ -31,8 +32,13 @@ def menu_productos():
             producto.buscar(termino)
         elif opcion == "2":
             nombre = input("Nombre: ")
-            categoria = input("Categoría: ")
-            unidad = input("Unidad (un/kg): ")
+            console.print("\nCategorías:")
+            for i, cat in enumerate(producto.CATEGORIAS, 1):
+                console.print(f"{i}. {cat}")
+            opcion_cat = int(input("Elige categoría: ")) - 1
+            categoria = producto.CATEGORIAS[opcion_cat]
+            console.print("\n1. Unidad (un)\n2. Kilogramo (kg)")
+            unidad = "un" if input("Unidad: ") == "1" else "kg"
             precio_venta = float(input("Precio venta: "))
             precio_costo = float(input("Precio costo: "))
             codigo_barra = input("Código de barra (opcional): ") or None
@@ -44,6 +50,9 @@ def menu_productos():
         elif opcion == "4":
             termino = input("Nombre o código de barra: ")
             producto.desactivar(termino)
+        elif opcion == "5":
+            termino = input("Nombre o código de barra: ")
+            producto.eliminar(termino)
         elif opcion == "0":
             break
 
@@ -78,45 +87,139 @@ def menu_ventas():
     while True:
         console.print("\n=== VENTAS ===")
         console.print("1. Nueva venta")
-        console.print("2. Agregar producto a venta")
-        console.print("3. Eliminar producto de venta")
-        console.print("4. Modificar cantidad")
-        console.print("5. Registrar pago")
-        console.print("6. Completar venta")
-        console.print("7. Cancelar venta")
+        console.print("2. Ver detalle de venta")
+        console.print("3. Cancelar venta")
+        console.print("4. Eliminar venta")
         console.print("0. Volver")
         opcion = input("\nElige una opción: ")
 
         if opcion == "1":
-            cliente_id = input("ID del cliente (Enter para omitir): ")
-            cliente_id = int(cliente_id) if cliente_id else None
-            venta.crear_venta(cliente_id)
+            venta_id = venta.crear_venta()
+            if not venta_id:
+                continue
+
+            while True:
+                console.print("\n[cyan]Agregar producto (Enter para terminar)[/cyan]")
+                termino = input("Nombre o código de barra: ")
+                if not termino:
+                    break
+                resultado = venta.buscar_producto(termino)
+                if not resultado:
+                    continue
+                producto_id, nombre, precio = resultado
+                cantidad = float(input(f"Cantidad ({nombre} - ${precio}): "))
+                venta.agregar_producto(venta_id, producto_id, cantidad)
+
+            total = venta.obtener_total(venta_id)
+            pendiente = total
+            console.print(f"\n[bold]Total: ${total:.0f}[/bold]")
+
+            metodos = {"1": "efectivo", "2": "tarjeta", "3": "credito"}
+
+            while pendiente > 0:
+                console.print(f"\n[cyan]Pendiente: ${pendiente:.0f}[/cyan]")
+                console.print("1. Efectivo  2. Tarjeta  3. Crédito")
+                opcion_pago = input("Método de pago: ")
+                metodo = metodos.get(opcion_pago)
+                if not metodo:
+                    console.print("[red]Opción no válida[/red]")
+                    continue
+
+                if metodo == 'efectivo':
+                    monto_recibido = float(input(f"Monto recibido: "))
+                    if monto_recibido <= 0:
+                        console.print("[red]Monto inválido[/red]")
+                        continue
+                    monto_pago = min(monto_recibido, pendiente)
+                    venta.registrar_pago(venta_id, metodo, monto_pago)
+                    vuelto = monto_recibido - pendiente
+                    if vuelto > 0:
+                        console.print(f"[green]Vuelto: ${vuelto:.0f}[/green]")
+                    pendiente -= monto_pago
+
+                elif metodo == 'tarjeta':
+                    venta.registrar_pago(venta_id, metodo, pendiente)
+                    pendiente = 0
+
+                elif metodo == 'credito':
+                    cliente_id = venta.seleccionar_cliente(cliente)
+                    if cliente_id:
+                        venta.asignar_cliente(venta_id, cliente_id)
+                    venta.registrar_pago(venta_id, metodo, pendiente)
+                    pendiente = 0
+
+            venta.completar_venta(venta_id)
+
+
         elif opcion == "2":
-            venta_id = int(input("ID de la venta: "))
-            producto_id = int(input("ID del producto: "))
-            cantidad = float(input("Cantidad: "))
-            venta.agregar_producto(venta_id, producto_id, cantidad)
+            from datetime import date, timedelta
+            console.print("\n¿Qué ventas quieres ver?")
+            console.print("1. Hoy")
+            console.print("2. Esta semana")
+            console.print("3. Este mes")
+            console.print("4. Rango de fechas")
+            console.print("5. Todas")
+            filtro = input("Filtro: ")
+
+            hoy = date.today()
+            fecha_desde = None
+            fecha_hasta = None
+
+            if filtro == "1":
+                fecha_desde = hoy
+                fecha_hasta = hoy
+            elif filtro == "2":
+                fecha_desde = hoy - timedelta(days=hoy.weekday())
+                fecha_hasta = hoy
+            elif filtro == "3":
+                fecha_desde = hoy.replace(day=1)
+                fecha_hasta = hoy
+            elif filtro == "4":
+                fecha_desde = input("Fecha desde (YYYY-MM-DD): ")
+                fecha_hasta = input("Fecha hasta (YYYY-MM-DD): ")
+            # filtro == "5": sin fechas, trae todo
+
+            venta.listar_ventas(fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+            venta_id_str = input("\nID de la venta a ver (Enter para cancelar): ")
+            if venta_id_str:
+                venta.ver_detalle(int(venta_id_str))
+
         elif opcion == "3":
             venta_id = int(input("ID de la venta: "))
-            producto_id = int(input("ID del producto: "))
-            venta.eliminar_producto(venta_id, producto_id)
+            venta.cancelar_venta(venta_id)
+
         elif opcion == "4":
             venta_id = int(input("ID de la venta: "))
-            producto_id = int(input("ID del producto: "))
-            cantidad = float(input("Nueva cantidad: "))
-            venta.modificar_cantidad(venta_id, producto_id, cantidad)
-        elif opcion == "5":
-            venta_id = int(input("ID de la venta: "))
-            console.print("Métodos: efectivo / tarjeta / credito")
-            metodo = input("Método de pago: ")
-            monto = float(input("Monto recibido: "))
-            venta.registrar_pago(venta_id, metodo, monto)
-        elif opcion == "6":
-            venta_id = int(input("ID de la venta: "))
-            venta.completar_venta(venta_id)
-        elif opcion == "7":
-            venta_id = int(input("ID de la venta: "))
-            venta.cancelar_venta(venta_id)
+            venta.eliminar_venta(venta_id)
+
+        elif opcion == "0":
+            break
+
+def menu_clientes():
+    while True:
+        console.print("\n=== CLIENTES ===")
+        console.print("1. Buscar cliente")
+        console.print("2. Crear cliente")
+        console.print("3. Activar/Desactivar cliente")
+        console.print("4. Ver historial de compras")
+        console.print("0. Volver")
+        opcion = input("\nElige una opción: ")
+
+        if opcion == "1":
+            termino = input("Nombre o ID: ")
+            cliente.buscar(termino)
+        elif opcion == "2":
+            nombre = input("Nombre: ")
+            cliente.crear(nombre)
+        elif opcion == "3":
+            termino = input("Nombre o ID: ")
+            cliente.desactivar(termino)
+        elif opcion == "4":
+            termino = input("Nombre o ID del cliente: ")
+            if cliente.ver_historial(termino):
+                venta_id_str = input("\nID de venta a ver en detalle (Enter para cancelar): ")
+                if venta_id_str:
+                    venta.ver_detalle(int(venta_id_str))
         elif opcion == "0":
             break
 
@@ -139,7 +242,7 @@ def menu_principal():
         elif opcion == "3":
             menu_ventas()
         elif opcion == "4":
-            pass  # menu_clientes()
+            menu_clientes()
         elif opcion == "5":
             pass  # menu_cuentas_cobrar()
         elif opcion == "6":
